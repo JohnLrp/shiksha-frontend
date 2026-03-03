@@ -1,44 +1,52 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import "./Login.css";
 
 const Login = () => {
-  const { login, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const { login, isAuthenticated, user } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Already logged in → redirect
+  // Already logged in → redirect based on role if known
   if (isAuthenticated) {
-    window.location.href = "https://app.shikshacom.com";
+    const dest = user?.role === "teacher"
+      ? "https://teacher.shikshacom.com"
+      : "https://app.shikshacom.com";
+    window.location.href = dest;
     return null;
   }
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
-  setSubmitting(true);
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
 
-  try {
-    await login(email, password);
-    window.location.href = "https://app.shikshacom.com";
-  } catch (err) {
+    try {
+      // login now returns the authenticated user object, but we can also
+      // read it from context after the promise resolves
+      const loggedInUser = await login(email, password);
+      const role = loggedInUser?.role || user?.role;
+
+      // Role-based redirect
+      if (role === "teacher") {
+        window.location.href = "https://teacher.shikshacom.com";
+      } else {
+        window.location.href = "https://app.shikshacom.com";
+      }
+    } catch (err) {
       const message =
-        typeof err === "string"
-          ? err
-          : err?.response?.data?.detail ||
-            err?.message ||
-            "login Failed";
-    setError(message); //  THIS is the fix
-  } finally {
-    setSubmitting(false);
-  }
-};
-
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Login failed";
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="login-container">
