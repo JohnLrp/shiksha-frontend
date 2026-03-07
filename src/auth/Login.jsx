@@ -26,9 +26,9 @@ const handleSubmit = async (e) => {
             );
 
     console.log("Logged in user:", loggedInUser);
-    console.log("Role detected:", role);
+    console.log("Role detected:", roles);
 
-    if (role === "teacher") {
+    if (isTeacher) {
       window.location.href = "https://teacher.shikshacom.com";
     } else {
       window.location.href = "https://app.shikshacom.com";
