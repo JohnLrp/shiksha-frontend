@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { useEffect } from "react"; // NEW
+import { Routes, Route, Navigate } from 'react-router-dom'; // UPDATED
 
 import Dashboard from './Dashboard';
 import ProtectedRoute from '../routes/ProtectedRoute';
@@ -43,7 +44,6 @@ import ThreadListPage from '../forum/ThreadListPage';
 import ThreadDetailPage from '../forum/ThreadDetailPage';
 import CreateThreadPage from '../forum/CreateThreadPage';
 import { useAuth } from "../contexts/AuthContext";
-import { Navigate } from "react-router-dom";
 
 function Page({ children }) {
   return (
@@ -55,17 +55,36 @@ function Page({ children }) {
   );
 }
 
-function App() {
-  const { isAuthenticated, user, loading } = useAuth();
+// NEW: app domain root ko control karega
+function AppEntry({ isAuthenticated }) {
+  const host = window.location.hostname;
+  const isAppDomain = host === "app.shikshacom.com";
 
-  if (loading) return null; // or spinner
+  useEffect(() => {
+    if (isAppDomain && !isAuthenticated) {
+      window.location.href = "https://www.shikshacom.com/login";
+    }
+  }, [isAppDomain, isAuthenticated]);
+
+  if (isAppDomain) {
+    if (!isAuthenticated) return null;
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <HomePage />;
+}
+
+function App() {
+  const { isAuthenticated, loading } = useAuth(); // UPDATED: user removed because not used
+
+  if (loading) return null; // KEEP AS IT IS
+
   return (
     <div className="app">
       <Routes>
 
-        {/* ===== HOME ===== */}
-       {/* ===== ROOT DOMAIN CONTROL ===== */}
-<Route path="/" element={<HomePage />} />
+        {/* UPDATED: direct app.shikshacom.com open hone par auth check */}
+        <Route path="/" element={<AppEntry isAuthenticated={isAuthenticated} />} />
 
         {/* ===== DASHBOARD (PROTECTED) ===== */}
         <Route
